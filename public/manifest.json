@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Socially App",
+  "version": "1.0",
+  "description": "CS598-OM Final Project: Socially App",
+  "permissions": [
+    "scripting",
+    "storage",
+    "activeTab"
+  ],
+  "optional_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Socially App"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "script.css",
+        "script.js",
+        "data/mp-logo.png"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "icons": {
+    "128": "data/mp-logo.png" 
+  }
+}

@@ -1,0 +1,24 @@
+
+.sample-button {
+  background-color: #4e0000;      /* Red background */
+  color: white;                   /* White text */
+  padding: 15px 20px;               /* Big size */
+  margin: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -ms-transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%);
+  border: none;                     /* No border */
+  border-radius: 20px;              /* Rounded corners */
+  font-size: 14px;                  /* Text size */
+  cursor: pointer;                  /* Pointer cursor on hover */
+  vertical-align: middle;           /* Align text vertically */
+  display: inline-flex;             /* Use flexbox to control alignment */
+  align-items: center;              /* Vertically center text */
+  justify-content: center;          /* Horizontally center text */
+}
+
+.sample-button:hover {
+  background-color: #E03E00;      /* Darker color on hover */
+}
