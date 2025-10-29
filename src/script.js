@@ -2,9 +2,10 @@
 
 import { initMutationObserver } from './mutation-observer.js';
 import { autoAttachBestMatch } from './editor-attachment.js';
+import './test-popup.js'; // Import test functions for easy testing
 
 // Content-capture helper: attach to textareas, inputs and contenteditable elements
-// Emits a custom event 'grammarly-like-input' on the element when debounced input is ready.
+// Emits a custom event 'socially-like-input' on the element when debounced input is ready.
 // Event detail: { text, selectionStart, selectionEnd, surroundingText, isComposing, element }
 (() => {
 
@@ -17,13 +18,13 @@ import { autoAttachBestMatch } from './editor-attachment.js';
     }, 50);
 
     // Expose a global helper for manual attachment
-    window.__grammarlyCapture = {
+    window.__sociallyCapture = {
         attach: (el) => attachToEditable(el), // Assumes attachToEditable is imported or available in scope
         scan: (n) => autoAttachBestMatch(n),
         disconnectObserver: () => mo.disconnect(),
     };
 
     // Log to indicate that the script is active
-    console.log('grammarly-capture: script injected and active');
-    
+    console.log('socially-capture: script injected and active');
+
 })();

@@ -2,11 +2,14 @@
 
 import { isEditable, getText, DEFAULT_DEBOUNCE_MS } from './utils.js';
 import { getPrioritySelectors } from './selectors.js';
+import { resultsPopup } from './results-popup.js';
+import { showTestPopup } from './test-popup.js';
+import { analyzeText } from './api.js';
 
 // Attach to an editable element to listen for input events
 export function attachToEditable(el, options = {}) {
     if (!isEditable(el)) return null;
-    if (el.__grammarlyCaptureAttached) return el.__grammarlyCaptureAttached;
+    if (el.__sociallyCaptureAttached) return el.__sociallyCaptureAttached;
 
     const debounceMs = options.debounceMs || DEFAULT_DEBOUNCE_MS;
     let timer = null;
@@ -29,9 +32,34 @@ export function attachToEditable(el, options = {}) {
     iconButton.style.visibility = 'visible';
 
     // Handle icon button click
-    iconButton.addEventListener('click', () => {
+    iconButton.addEventListener('click', async () => {
         const text = getText(el);
-        console.log('Text sent via icon:', text);
+        console.log('Text to analyze:', text);
+
+        if (!text || text.trim().length === 0) {
+            resultsPopup.showError('Please enter some text to analyze.');
+            return;
+        }
+
+        //showTestPopup();
+
+        // Show loading state
+        resultsPopup.showLoading();
+
+        try {
+            // Call backend API to analyze the text
+            const results = await analyzeText(text);
+            console.log('Analysis results:', results);
+
+            // Show results popup with reference to the element
+            resultsPopup.show(results, el);
+
+        } catch (error) {
+            console.error('Error analyzing text:', error);
+            resultsPopup.showError(`Failed to analyze text: ${error.message}`);
+        }
+
+
     });
 
     // Add icon to the DOM
@@ -41,11 +69,11 @@ export function attachToEditable(el, options = {}) {
     const attached = {
         element: el,
         detach() {
-            el.__grammarlyCaptureAttached = null;
+            el.__sociallyCaptureAttached = null;
         }
     };
 
-    el.__grammarlyCaptureAttached = attached;
+    el.__sociallyCaptureAttached = attached;
     return attached;
 }
 
@@ -59,12 +87,12 @@ export function autoAttachBestMatch(n) {
     for (const sel of priority) {
         const el = findFirstInShadowRoots(sel, n)
         if (el) {
-            let attached_bool = el.getAttribute('data-grammarly-attached');
+            let attached_bool = el.getAttribute('data-socially-attached');
             if (attached_bool == null || attached_bool === 'false') {
                 const attached = attachToEditable(el);
                 // Always ensure an attribute mark exists for visibility
-                try { el.setAttribute('data-grammarly-attached', 'true'); } catch (e) { }
-                console.log('grammarly-capture: auto-attached to element', sel, el);
+                try { el.setAttribute('data-socially-attached', 'true'); } catch (e) { }
+                console.log('socially-capture: auto-attached to element', sel, el);
                 return attached;
             }
         }
