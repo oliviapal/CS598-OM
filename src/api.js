@@ -1,8 +1,23 @@
 // api.js
-// Backend API communication
+// Backend API communication for FastAPI backend in ./backend
 
-// TODO: Replace with your actual backend URL
-const BACKEND_URL = 'http://localhost:5000'; // Example: change this to your backend URL
+// Default to FastAPI's typical local URL; can be changed at runtime via setBackendURL
+let BACKEND_URL = 'http://127.0.0.1:8000';
+
+async function request(path, options = {}) {
+    const url = `${BACKEND_URL}${path}`;
+    const resp = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        ...options,
+    });
+    if (!resp.ok) {
+        let details = '';
+        try { details = JSON.stringify(await resp.json()); } catch { }
+        throw new Error(`HTTP ${resp.status} ${resp.statusText}${details ? ': ' + details : ''}`);
+    }
+    try { return await resp.json(); } catch { return null; }
+}
 
 /**
  * Analyze text using the backend API
@@ -10,48 +25,47 @@ const BACKEND_URL = 'http://localhost:5000'; // Example: change this to your bac
  * @returns {Promise<Object>} Analysis results
  */
 export async function analyzeText(text) {
-    // Testing
-    return {
-        toxicity: "Low",
-        empathy: "Medium",
-        thoughtfulness: "High",
-        proSocial: "High",
-        suggestion: "I really appreciate your perspective on this matter. It would be great if we could discuss this further and find a solution that works for everyone."
+    // NOTE: Backend currently exposes POST /rephrase; using that until /analyze exists
+    // We map response into the UI shape expected by the results popup.
+    const payload = {
+        user_input: text,
+        improve_toxicity: false,
+        improve_prosocial: false,
     };
+    const data = await request('/rephrase', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
 
-    try {
-        const response = await fetch(`${BACKEND_URL}/analyze`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ text: text })
-        });
+    // Backend demo echoes input; prefer a rephrased field if present
+    const suggestion = data?.rephrased_text || data?.received_text || text;
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `Server returned status ${response.status}`);
-        }
+    // Placeholder scores until backend provides them. Adjust if backend adds scoring.
+    return {
+        toxicity: 'Low',
+        empathy: 'Medium',
+        thoughtfulness: 'High',
+        proSocial: 'High',
+        suggestion,
+    };
+}
 
-        const data = await response.json();
-
-        // Validate the response structure
-        if (!data.toxicity || !data.empathy || !data.thoughtfulness || !data.proSocial || !data.suggestion) {
-            throw new Error('Invalid response format from backend');
-        }
-
-        return {
-            toxicity: data.toxicity,
-            empathy: data.empathy,
-            thoughtfulness: data.thoughtfulness,
-            proSocial: data.proSocial,
-            suggestion: data.suggestion
-        };
-
-    } catch (error) {
-        console.error('API Error:', error);
-        throw error;
-    }
+/**
+ * Improve an existing suggestion focused on selected categories
+ * @param {string} suggestion The current suggestion text
+ * @param {string[]} selectedCategories e.g., ['toxicity','proSocial']
+ */
+export async function improveSuggestion(suggestion, selectedCategories = []) {
+    const payload = {
+        user_input: suggestion,
+        improve_toxicity: selectedCategories.includes('toxicity'),
+        improve_prosocial: selectedCategories.includes('proSocial'),
+    };
+    const data = await request('/rephrase', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+    return data?.rephrased_text || data?.received_text || suggestion;
 }
 
 /**

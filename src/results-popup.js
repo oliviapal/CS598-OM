@@ -2,6 +2,7 @@
 
 import { improvePopup } from './improve-popup.js';
 import { getScoreColor } from './helpers.js';
+import { improveSuggestion } from './api.js';
 
 // Creates and manages the analysis results popup
 
@@ -201,12 +202,18 @@ export class ResultsPopup {
     /**
      * Submit improvement request
      */
-    submitImprovement(currentSuggestion, selectedCategories, scores) {
-        console.log('Improve request:', { currentSuggestion, selectedCategories, scores });
-        // TODO: Call backend API to improve the suggestion
-        // For now, just show a placeholder message
-        alert(`Improvement requested!\nCurrent: ${currentSuggestion}\nCategories to improve: ${selectedCategories.join(', ')}\nScores: ${JSON.stringify(scores)}`);
-        this.hideImprovePopup();
+    async submitImprovement(currentSuggestion, selectedCategories, scores) {
+        try {
+            this.hideImprovePopup();
+            this.showLoading();
+            const improved = await improveSuggestion(currentSuggestion, selectedCategories);
+            // Re-show results with updated suggestion
+            const updated = { ...(this.lastResults || {}), suggestion: improved };
+            this.show(updated, this.targetElement);
+        } catch (e) {
+            console.error('Improve failed', e);
+            this.showError(`Improve failed: ${e.message || e}`);
+        }
     }
 
     /**
