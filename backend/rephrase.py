@@ -4,15 +4,20 @@ import torch
 device = "mps" if torch.backends.mps.is_available() else "cpu"
 
 tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-base")
-model = T5ForConditionalGeneration.from_pretrained("declare-lab/flan-alpaca-base").to(device)
-# model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-base").to(device)
+rephrase_model = T5ForConditionalGeneration.from_pretrained("declare-lab/flan-alpaca-base").to(device)
 
-prompt = """You are a powerful tool to help user rephrase their input to make them more polite and non-toxic:
+def get_rephrased_text(input_text: str) -> str:
+    prompt = f"""You are the user who is trying to polish the input to make it more polite and non-toxic:
+    Input: {input_text}
+    Output: """
 
-Input: I hate you. You sucks.
-"""
+    input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
 
-input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+    outputs = rephrase_model.generate(input_ids)
+    return tokenizer.decode(outputs[0])
 
-outputs = model.generate(input_ids)
-print(tokenizer.decode(outputs[0]))
+if __name__ == "__main__":
+    test_input = "Your service is terrible and I hate it!"
+    rephrased_output = get_rephrased_text(test_input)
+    print("Original:", test_input)
+    print("Rephrased:", rephrased_output)

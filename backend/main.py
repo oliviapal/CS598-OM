@@ -1,6 +1,7 @@
 from typing import Union
 from fastapi import FastAPI
 from pydantic import BaseModel
+from rephrase import get_rephrased_text
 
 app = FastAPI()
 
@@ -17,9 +18,7 @@ class RephraseRequest(BaseModel):
 
 @app.post("/rephrase")
 async def rephrase_item(req: RephraseRequest):
-    return {
-        "item_id": req.item_id,
-        "received_text": req.user_input,
-        "improve_toxicity": req.improve_toxicity,
-        "improve_prosocial": req.improve_prosocial
-    }
+    if req.improve_toxicity:
+        rephrased_text = get_rephrased_text(req.user_input)
+        return {"item_id": req.item_id, "original_text": req.user_input, "rephrased_text": rephrased_text}
+
