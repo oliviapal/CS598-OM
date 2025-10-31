@@ -7,7 +7,6 @@ let BACKEND_URL = 'http://127.0.0.1:8000';
 async function request(path, options = {}) {
     const url = `${BACKEND_URL}${path}`;
     const resp = await fetch(url, {
-        method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         ...options,
     });
