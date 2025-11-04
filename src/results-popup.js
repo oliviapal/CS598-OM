@@ -12,6 +12,7 @@ export class ResultsPopup {
         this.popup = null;
         this.targetElement = null; // Store reference to the element being edited
         this.improvePopup = null; // Store reference to improve popup
+        this.escHandler = null; // Store ESC handler for cleanup
     }
 
 
@@ -28,6 +29,10 @@ export class ResultsPopup {
     show(results, targetElement = null) {
         this.targetElement = targetElement;
         this.lastResults = results;
+
+        // Clean up any existing popup (like loading screen) first
+        this.forceClosePopup();
+        this.cleanupAllPopups();
 
         // Create popup container
         this.popup = document.createElement('div');
@@ -109,7 +114,7 @@ export class ResultsPopup {
     attachEventListeners(suggestionText) {
         // Close button
         const closeBtn = this.popup.querySelector('.socially-close-btn');
-        closeBtn.addEventListener('click', () => this.hide());
+        closeBtn.addEventListener('click', () => this.dismissAndRefocus());
 
         // Accept button
         const acceptBtn = this.popup.querySelector('.socially-accept-btn');
@@ -120,7 +125,7 @@ export class ResultsPopup {
         // Dismiss button
         const dismissBtn = this.popup.querySelector('.socially-dismiss-btn');
         dismissBtn.addEventListener('click', () => {
-            this.hide();
+            this.dismissAndRefocus();
         });
 
         // Improve button
@@ -130,13 +135,32 @@ export class ResultsPopup {
         });
 
         // ESC key to close
-        const escHandler = (e) => {
+        this.escHandler = (e) => {
             if (e.key === 'Escape') {
-                this.hide();
-                document.removeEventListener('keydown', escHandler);
+                this.dismissAndRefocus();
             }
         };
-        document.addEventListener('keydown', escHandler);
+        document.addEventListener('keydown', this.escHandler);
+    }
+
+    /**
+     * Dismiss popup and restore focus to the target element
+     */
+    dismissAndRefocus() {
+        // Clean up event listener
+        if (this.escHandler) {
+            document.removeEventListener('keydown', this.escHandler);
+            this.escHandler = null;
+        }
+        this.hide();
+        // Restore focus after popup closes
+        setTimeout(() => {
+            if (this.targetElement) {
+                try {
+                    this.targetElement.focus();
+                } catch (_) { }
+            }
+        }, 320);
     }
 
     /**
@@ -206,22 +230,13 @@ export class ResultsPopup {
     async submitImprovement(currentSuggestion, selectedCategories, scores) {
         try {
             this.hideImprovePopup();
-            this.showLoading();
+            // Call API without showing loading screen
             const improved = await improveSuggestion(currentSuggestion, selectedCategories);
-            // Immediately and forcefully close ALL popups including loading screen
-            this.forceClosePopup();
-            this.cleanupAllPopups();
-            // Small delay to ensure DOM cleanup completes
-            setTimeout(() => {
-                confirmPopup.show(improved, this.targetElement);
-            }, 100);
+            // Show confirm popup directly
+            confirmPopup.show(improved, this.targetElement);
         } catch (e) {
             console.error('Improve failed', e);
-            this.forceClosePopup();
-            this.cleanupAllPopups();
-            setTimeout(() => {
-                this.showError(`Improve failed: ${e.message || e}`);
-            }, 100);
+            this.showError(`Improve failed: ${e.message || e}`);
         }
     }
 
@@ -241,24 +256,32 @@ export class ResultsPopup {
      * Hide and remove the popup
      */
     hide() {
+        // Clean up event listener
+        if (this.escHandler) {
+            document.removeEventListener('keydown', this.escHandler);
+            this.escHandler = null;
+        }
+
         if (this.popup) {
-            // Immediately stop intercepting clicks
+            // Immediately stop intercepting clicks and start fade out
             try { this.popup.style.pointerEvents = 'none'; } catch (_) { }
-            this.popup.classList.remove('socially-popup-visible');
+            try { this.popup.classList.remove('socially-popup-visible'); } catch (_) { }
+
+            const popupToRemove = this.popup;
+            this.popup = null; // Clear reference immediately
 
             setTimeout(() => {
-                if (this.popup && this.popup.parentNode) {
-                    this.popup.parentNode.removeChild(this.popup);
+                if (popupToRemove && popupToRemove.parentNode) {
+                    try {
+                        popupToRemove.parentNode.removeChild(popupToRemove);
+                    } catch (_) { }
                 }
-                this.popup = null;
-                // Do NOT clear targetElement here to allow focus restoration right after hide
             }, 300); // Match CSS transition duration
 
             // Backup cleanup in case the first timer is interrupted
             setTimeout(() => {
-                if (this.popup && this.popup.parentNode) {
-                    try { this.popup.parentNode.removeChild(this.popup); } catch (_) { }
-                    this.popup = null;
+                if (popupToRemove && popupToRemove.parentNode) {
+                    try { popupToRemove.parentNode.removeChild(popupToRemove); } catch (_) { }
                 }
             }, 1500);
         }
@@ -366,7 +389,9 @@ export class ResultsPopup {
      * Show error message
      */
     showError(errorMessage) {
-        this.hide();
+        // Force close any existing popup immediately
+        this.forceClosePopup();
+        this.cleanupAllPopups();
 
         this.popup = document.createElement('div');
         this.popup.className = 'socially-popup';

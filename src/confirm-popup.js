@@ -6,6 +6,7 @@ export class ConfirmPopup {
         this.popup = null;
         this.targetElement = null;
         this.suggestionText = '';
+        this.escHandler = null;
     }
 
     show(suggestionText, targetElement = null) {
@@ -53,22 +54,21 @@ export class ConfirmPopup {
 
         // Wire events
         const closeBtn = this.popup.querySelector('.socially-close-btn');
-        closeBtn.addEventListener('click', () => this.hide());
+        closeBtn.addEventListener('click', () => this.dismissAndRefocus());
 
         const acceptBtn = this.popup.querySelector('.socially-accept-btn');
         acceptBtn.addEventListener('click', () => this.accept());
 
         const dismissBtn = this.popup.querySelector('.socially-dismiss-btn');
-        dismissBtn.addEventListener('click', () => this.hide());
+        dismissBtn.addEventListener('click', () => this.dismissAndRefocus());
 
         // ESC to close
-        const escHandler = (e) => {
+        this.escHandler = (e) => {
             if (e.key === 'Escape') {
-                this.hide();
-                document.removeEventListener('keydown', escHandler);
+                this.dismissAndRefocus();
             }
         };
-        document.addEventListener('keydown', escHandler);
+        document.addEventListener('keydown', this.escHandler);
 
         // Animate in
         setTimeout(() => this.popup.classList.add('socially-popup-visible'), 10);
@@ -102,7 +102,29 @@ export class ConfirmPopup {
         setTimeout(focusAfterHide, 320);
     }
 
+    dismissAndRefocus() {
+        // Clean up event listener
+        if (this.escHandler) {
+            document.removeEventListener('keydown', this.escHandler);
+            this.escHandler = null;
+        }
+        this.hide();
+        // Restore focus after popup closes
+        setTimeout(() => {
+            if (this.targetElement) {
+                try {
+                    this.targetElement.focus();
+                } catch (_) { }
+            }
+        }, 320);
+    }
+
     hide() {
+        // Clean up event listener
+        if (this.escHandler) {
+            document.removeEventListener('keydown', this.escHandler);
+            this.escHandler = null;
+        }
         if (!this.popup) return;
         try { this.popup.style.pointerEvents = 'none'; } catch (_) { }
         this.popup.classList.remove('socially-popup-visible');
