@@ -3,6 +3,7 @@
 import { improvePopup } from './improve-popup.js';
 import { getScoreColor } from './helpers.js';
 import { improveSuggestion } from './api.js';
+import { confirmPopup } from './confirm-popup.js';
 
 // Creates and manages the analysis results popup
 
@@ -207,13 +208,33 @@ export class ResultsPopup {
             this.hideImprovePopup();
             this.showLoading();
             const improved = await improveSuggestion(currentSuggestion, selectedCategories);
-            // Re-show results with updated suggestion
-            const updated = { ...(this.lastResults || {}), suggestion: improved };
-            this.show(updated, this.targetElement);
+            // Immediately and forcefully close ALL popups including loading screen
+            this.forceClosePopup();
+            this.cleanupAllPopups();
+            // Small delay to ensure DOM cleanup completes
+            setTimeout(() => {
+                confirmPopup.show(improved, this.targetElement);
+            }, 100);
         } catch (e) {
             console.error('Improve failed', e);
-            this.showError(`Improve failed: ${e.message || e}`);
+            this.forceClosePopup();
+            this.cleanupAllPopups();
+            setTimeout(() => {
+                this.showError(`Improve failed: ${e.message || e}`);
+            }, 100);
         }
+    }
+
+    /**
+     * Force immediate cleanup of any popup without animations
+     */
+    forceClosePopup() {
+        if (this.popup && this.popup.parentNode) {
+            try {
+                this.popup.parentNode.removeChild(this.popup);
+            } catch (_) { }
+        }
+        this.popup = null;
     }
 
     /**
@@ -299,10 +320,13 @@ export class ResultsPopup {
      * Show loading state
      */
     showLoading() {
-        this.hide();
+        // Force close any existing popup immediately
+        this.forceClosePopup();
+        // Also clean up any stray popups in the DOM
+        this.cleanupAllPopups();
 
         this.popup = document.createElement('div');
-        this.popup.className = 'socially-popup';
+        this.popup.className = 'socially-popup socially-loading-popup';
         this.popup.innerHTML = `
             <div class="socially-popup-header">
                 <h3>Analyzing...</h3>
@@ -318,8 +342,24 @@ export class ResultsPopup {
         document.body.appendChild(this.popup);
 
         setTimeout(() => {
-            this.popup.classList.add('socially-popup-visible');
+            if (this.popup) {
+                this.popup.classList.add('socially-popup-visible');
+            }
         }, 10);
+    }
+
+    /**
+     * Clean up any stray popups that might be left in the DOM
+     */
+    cleanupAllPopups() {
+        const popups = document.querySelectorAll('.socially-popup');
+        popups.forEach(popup => {
+            try {
+                if (popup.parentNode) {
+                    popup.parentNode.removeChild(popup);
+                }
+            } catch (_) { }
+        });
     }
 
     /**
