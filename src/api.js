@@ -24,28 +24,33 @@ async function request(path, options = {}) {
  * @returns {Promise<Object>} Analysis results
  */
 export async function analyzeText(text) {
-    // NOTE: Backend currently exposes POST /rephrase; using that until /analyze exists
     // We map response into the UI shape expected by the results popup.
     const payload = {
-        user_input: text,
-        improve_toxicity: false,
-        improve_prosocial: false,
+        user_input: text
     };
-    const data = await request('/rephrase', {
+    const data = await request('/analyze', {
         method: 'POST',
         body: JSON.stringify(payload),
     });
 
-    // Backend demo echoes input; prefer a rephrased field if present
-    const suggestion = data?.rephrased_text || data?.received_text || text;
+    // get the verdict result
+    const verdict = data?.verdict || null;
+    const rephrase_data = await request('/rephrase', {
+        method: 'POST',
+        body: JSON.stringify({
+            user_input: text,
+            input_label: verdict?.label || 'N/A',
+            // the verdict.reasons is also a dictionary, we convert it to string for rephrase_note
+            rephrase_reasons: JSON.stringify(verdict?.reasons || {}),
+        }),
+    });
 
-    // Placeholder scores until backend provides them. Adjust if backend adds scoring.
     return {
-        toxicity: 'Low',
-        empathy: 'Medium',
-        thoughtfulness: 'High',
-        proSocial: 'High',
-        suggestion,
+        toxicity: data?.toxicity || 'N/A',
+        empathy: data?.sentiment || 'N/A',
+        thoughtfulness: data?.thoughtfulness || 'N/A',
+        proSocial: data?.proSocial || 'N/A',
+        suggestion: rephrase_data?.rephrased_text || 'N/A',
     };
 }
 
