@@ -60,10 +60,22 @@ export async function analyzeText(text) {
  * @param {string[]} selectedCategories e.g., ['toxicity','proSocial']
  */
 export async function improveSuggestion(suggestion, selectedCategories = []) {
+    var improve_prompt = 'Please improve the following text to make it more ';
+    if (selectedCategories.includes('toxicity')) {
+        improve_prompt += 'non-toxic & polite, ';
+    }
+    if (selectedCategories.includes('proSocial')) {
+        improve_prompt += 'pro-social, ';
+    }
+    if (selectedCategories.includes('thoughtfulness')) {
+        improve_prompt += 'thoughtful, ';
+    }
+    if (selectedCategories.includes('empathy')) {
+        improve_prompt += 'empathetic, ';
+    }
     const payload = {
         user_input: suggestion,
-        improve_toxicity: selectedCategories.includes('toxicity'),
-        improve_prosocial: selectedCategories.includes('proSocial'),
+        rephrase_reasons: improve_prompt
     };
     const data = await request('/rephrase', {
         method: 'POST',

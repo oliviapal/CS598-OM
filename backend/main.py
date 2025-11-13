@@ -21,7 +21,6 @@ async def read_root():
 
 # define request body model for REPHRASE endpoint
 class RephraseRequest(BaseModel):
-    item_id: Union[str, None] = None
     user_input: str
     input_label: Union[str, None] = None
     rephrase_reasons: Union[str, None] = None

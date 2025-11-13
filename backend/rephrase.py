@@ -1,23 +1,84 @@
-from transformers import T5Tokenizer, T5ForConditionalGeneration
+from email.mime import text
 import torch
+import os
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
-device = "mps" if torch.backends.mps.is_available() else "cpu"
+model_name = "Qwen/Qwen2.5-7B-Instruct"
 
-tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-base")
-rephrase_model = T5ForConditionalGeneration.from_pretrained("declare-lab/flan-alpaca-base").to(device)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype="auto",
+    device_map="auto"
+)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-def get_rephrased_text(input_text: str, input_label: str, rephrase_note: str) -> str:
-    prompt = f"""Given the input text, its label, and rephrase reasons, generate a new version of the text that aligns with the reasons while maintaining the original meaning.
-    Here is the text to rephrase: {input_text}.
-    The current label of the text is: {input_label}.
-    The rephrase reasons are: {rephrase_note}.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(BASE_DIR, "prompts/system.txt"), "r") as f:
+    SYSTEM_PROMPT = f.read()
+    f.close()
+
+with open(os.path.join(BASE_DIR, "prompts/toxicity.txt"), "r") as f:
+    toxicity_prompt = f.read()
+    f.close()
+
+with open(os.path.join(BASE_DIR, "prompts/politeness.txt"), "r") as f:
+    politeness_prompt = f.read()
+    f.close()
+
+with open(os.path.join(BASE_DIR, "prompts/empathy.txt"), "r") as f:
+    empathy_prompt = f.read()
+    f.close()
+
+with open(os.path.join(BASE_DIR, "prompts/pro-social.txt"), "r") as f:
+    pro_social_prompt = f.read()
+    f.close()
     
-    Rephrased text:"""
+with open(os.path.join(BASE_DIR, "prompts/synthesized.txt"), "r") as f:
+    synthesized_prompt = f.read()
+    f.close()
 
-    input_ids = tokenizer(prompt, return_tensors="pt").input_ids.to(device)
+def generate_prompt(user_input: str, goal: str, scores: dict = None) -> str:
+    if goal == "toxicity":
+        prompt = toxicity_prompt.replace("<<USER_INPUT>>", user_input)
+    elif goal == "politeness":
+        prompt = politeness_prompt.replace("<<USER_INPUT>>", user_input)
+    elif goal == "empathy":
+        prompt = empathy_prompt.replace("<<USER_INPUT>>", user_input)
+    elif goal == "pro-social":
+        prompt = pro_social_prompt.replace("<<USER_INPUT>>", user_input)
+    elif goal == "synthesized" and scores is not None:
+        prompt = synthesized_prompt.replace("<<USER_INPUT>>", user_input)
+        prompt = prompt.replace("<<TOXICITY_SCORE>>", f"{scores.get('toxicity', 'NaN'):.4f}")
+        prompt = prompt.replace("<<EMPATHY_SCORE>>", f"{scores.get('empathy', 'NaN'):.4f}")
+        prompt = prompt.replace("<<POLITENESS_SCORE>>", f"{scores.get('politeness', 'NaN'):.4f}")
+        prompt = prompt.replace("<<PRO_SOCIAL_SCORE>>", f"{scores.get('pro_social', 'NaN'):.4f}")
+    else:
+        raise ValueError("Invalid goal or missing scores for synthesized prompt.")
+    return prompt
 
-    outputs = rephrase_model.generate(input_ids)
-    return tokenizer.decode(outputs[0])
+def get_rephrased_text(user_prompt: str) -> str:
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": user_prompt}
+    ]
+    text = tokenizer.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    model_inputs = tokenizer([text], return_tensors="pt").to(model.device)
+
+    generated_ids = model.generate(
+        **model_inputs,
+        max_new_tokens=512
+    )
+    generated_ids = [
+        output_ids[len(input_ids):] for input_ids, output_ids in zip(model_inputs.input_ids, generated_ids)
+    ]
+
+    response = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
+    return response
 
 if __name__ == "__main__":
     test_input = "Your service is terrible and I hate it!"
