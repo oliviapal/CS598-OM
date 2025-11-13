@@ -12,22 +12,34 @@ export class ResultsPopup {
         this.popup = null;
         this.targetElement = null; // Store reference to the element being edited
         this.improvePopup = null; // Store reference to improve popup
+        this.escHandler = null; // Store ESC handler for cleanup
     }
 
 
     /**
      * Create and show the popup with analysis results
      * @param {Object} results - Analysis results from backend
-     * @param {string} results.toxicity - Toxicity score
-     * @param {string} results.empathy - Empathy score
-     * @param {string} results.thoughtfulness - Thoughtfulness score
-     * @param {string} results.proSocial - Pro-social score
+     * 
+     * @param {string} results.old_toxicity - Toxicity score
+     * @param {string} results.old_empathy - Empathy score
+     * @param {string} results.old_thoughtfulness - Thoughtfulness score
+     * @param {string} results.old_proSocial - Pro-social score
+     * 
+     * @param {string} results.new_toxicity - Toxicity score
+     * @param {string} results.new_empathy - Empathy score
+     * @param {string} results.new_thoughtfulness - Thoughtfulness score
+     * @param {string} results.new_proSocial - Pro-social score
+     * 
      * @param {string} results.suggestion - Rephrased suggestion
      * @param {HTMLElement} targetElement - The element to replace text in
      */
     show(results, targetElement = null) {
         this.targetElement = targetElement;
         this.lastResults = results;
+
+        // Clean up any existing popup (like loading screen) first
+        this.forceClosePopup();
+        this.cleanupAllPopups();
 
         // Create popup container
         this.popup = document.createElement('div');
@@ -45,19 +57,35 @@ export class ResultsPopup {
                     <h4>Scores</h4>
                     <div class="score-item">
                         <span class="score-label">Toxicity:</span>
-                        <span class="${getScoreColor('toxicity', results.toxicity)}">${this.escapeHtml(results.toxicity)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('toxicity', results.old_toxicity)}">${this.escapeHtml(results.old_toxicity)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('toxicity', results.new_toxicity)}">${this.escapeHtml(results.new_toxicity)}</span>
+                        </span>
                     </div>
                     <div class="score-item">
                         <span class="score-label">Empathy:</span>
-                        <span class="${getScoreColor('empathy', results.empathy)}">${this.escapeHtml(results.empathy)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('empathy', results.old_empathy)}">${this.escapeHtml(results.old_empathy)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('empathy', results.new_empathy)}">${this.escapeHtml(results.new_empathy)}</span>
+                        </span>
                     </div>
                     <div class="score-item">
                         <span class="score-label">Thoughtfulness:</span>
-                        <span class="${getScoreColor('thoughtfulness', results.thoughtfulness)}">${this.escapeHtml(results.thoughtfulness)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('thoughtfulness', results.old_thoughtfulness)}">${this.escapeHtml(results.old_thoughtfulness)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('thoughtfulness', results.new_thoughtfulness)}">${this.escapeHtml(results.new_thoughtfulness)}</span>
+                        </span>
                     </div>
                     <div class="score-item">
                         <span class="score-label">Pro-Social:</span>
-                        <span class="${getScoreColor('proSocial', results.proSocial)}">${this.escapeHtml(results.proSocial)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('proSocial', results.old_proSocial)}">${this.escapeHtml(results.old_proSocial)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('proSocial', results.new_proSocial)}">${this.escapeHtml(results.new_proSocial)}</span>
+                        </span>
                     </div>
                 </div>
                 <!-- Suggestion Section -->
@@ -109,7 +137,7 @@ export class ResultsPopup {
     attachEventListeners(suggestionText) {
         // Close button
         const closeBtn = this.popup.querySelector('.socially-close-btn');
-        closeBtn.addEventListener('click', () => this.hide());
+        closeBtn.addEventListener('click', () => this.dismissAndRefocus());
 
         // Accept button
         const acceptBtn = this.popup.querySelector('.socially-accept-btn');
@@ -120,7 +148,7 @@ export class ResultsPopup {
         // Dismiss button
         const dismissBtn = this.popup.querySelector('.socially-dismiss-btn');
         dismissBtn.addEventListener('click', () => {
-            this.hide();
+            this.dismissAndRefocus();
         });
 
         // Improve button
@@ -130,13 +158,32 @@ export class ResultsPopup {
         });
 
         // ESC key to close
-        const escHandler = (e) => {
+        this.escHandler = (e) => {
             if (e.key === 'Escape') {
-                this.hide();
-                document.removeEventListener('keydown', escHandler);
+                this.dismissAndRefocus();
             }
         };
-        document.addEventListener('keydown', escHandler);
+        document.addEventListener('keydown', this.escHandler);
+    }
+
+    /**
+     * Dismiss popup and restore focus to the target element
+     */
+    dismissAndRefocus() {
+        // Clean up event listener
+        if (this.escHandler) {
+            document.removeEventListener('keydown', this.escHandler);
+            this.escHandler = null;
+        }
+        this.hide();
+        // Restore focus after popup closes
+        setTimeout(() => {
+            if (this.targetElement) {
+                try {
+                    this.targetElement.focus();
+                } catch (_) { }
+            }
+        }, 320);
     }
 
     /**
@@ -181,10 +228,10 @@ export class ResultsPopup {
     showImprovePopup(currentSuggestion) {
         // Pass suggestion and scores to improvePopup
         const scores = {
-            toxicity: this.lastResults?.toxicity || '',
-            empathy: this.lastResults?.empathy || '',
-            thoughtfulness: this.lastResults?.thoughtfulness || '',
-            proSocial: this.lastResults?.proSocial || ''
+            toxicity: this.lastResults?.new_toxicity || '',
+            empathy: this.lastResults?.new_empathy || '',
+            thoughtfulness: this.lastResults?.new_thoughtfulness || '',
+            proSocial: this.lastResults?.new_proSocial || ''
         };
         improvePopup.show(
             { suggestion: currentSuggestion, scores },
@@ -206,22 +253,13 @@ export class ResultsPopup {
     async submitImprovement(currentSuggestion, selectedCategories, scores) {
         try {
             this.hideImprovePopup();
-            this.showLoading();
+            // Call API without showing loading screen
             const improved = await improveSuggestion(currentSuggestion, selectedCategories);
-            // Immediately and forcefully close ALL popups including loading screen
-            this.forceClosePopup();
-            this.cleanupAllPopups();
-            // Small delay to ensure DOM cleanup completes
-            setTimeout(() => {
-                confirmPopup.show(improved, this.targetElement);
-            }, 100);
+            // Show confirm popup directly
+            confirmPopup.show(improved, this.targetElement);
         } catch (e) {
             console.error('Improve failed', e);
-            this.forceClosePopup();
-            this.cleanupAllPopups();
-            setTimeout(() => {
-                this.showError(`Improve failed: ${e.message || e}`);
-            }, 100);
+            this.showError(`Improve failed: ${e.message || e}`);
         }
     }
 
@@ -241,24 +279,32 @@ export class ResultsPopup {
      * Hide and remove the popup
      */
     hide() {
+        // Clean up event listener
+        if (this.escHandler) {
+            document.removeEventListener('keydown', this.escHandler);
+            this.escHandler = null;
+        }
+
         if (this.popup) {
-            // Immediately stop intercepting clicks
+            // Immediately stop intercepting clicks and start fade out
             try { this.popup.style.pointerEvents = 'none'; } catch (_) { }
-            this.popup.classList.remove('socially-popup-visible');
+            try { this.popup.classList.remove('socially-popup-visible'); } catch (_) { }
+
+            const popupToRemove = this.popup;
+            this.popup = null; // Clear reference immediately
 
             setTimeout(() => {
-                if (this.popup && this.popup.parentNode) {
-                    this.popup.parentNode.removeChild(this.popup);
+                if (popupToRemove && popupToRemove.parentNode) {
+                    try {
+                        popupToRemove.parentNode.removeChild(popupToRemove);
+                    } catch (_) { }
                 }
-                this.popup = null;
-                // Do NOT clear targetElement here to allow focus restoration right after hide
             }, 300); // Match CSS transition duration
 
             // Backup cleanup in case the first timer is interrupted
             setTimeout(() => {
-                if (this.popup && this.popup.parentNode) {
-                    try { this.popup.parentNode.removeChild(this.popup); } catch (_) { }
-                    this.popup = null;
+                if (popupToRemove && popupToRemove.parentNode) {
+                    try { popupToRemove.parentNode.removeChild(popupToRemove); } catch (_) { }
                 }
             }, 1500);
         }
@@ -366,7 +412,9 @@ export class ResultsPopup {
      * Show error message
      */
     showError(errorMessage) {
-        this.hide();
+        // Force close any existing popup immediately
+        this.forceClosePopup();
+        this.cleanupAllPopups();
 
         this.popup = document.createElement('div');
         this.popup.className = 'socially-popup';
