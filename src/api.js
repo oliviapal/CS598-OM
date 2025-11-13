@@ -46,10 +46,14 @@ export async function analyzeText(text) {
     });
 
     return {
-        toxicity: data?.toxicity || 'N/A',
-        empathy: data?.sentiment || 'N/A',
-        thoughtfulness: data?.thoughtfulness || 'N/A',
-        proSocial: data?.proSocial || 'N/A',
+        old_toxicity: data?.old_toxicity || 'N/A',
+        old_empathy: data?.old_sentiment || 'N/A',
+        old_thoughtfulness: data?.old_thoughtfulness || 'N/A',
+        old_proSocial: data?.old_proSocial || 'N/A',
+        new_toxicity: data?.new_toxicity || 'N/A',
+        new_empathy: data?.new_empathy || 'N/A',
+        new_thoughtfulness: data?.new_thoughtfulness || 'N/A',
+        new_proSocial: data?.new_proSocial || 'N/A',
         suggestion: rephrase_data?.rephrased_text || 'N/A',
     };
 }
@@ -64,6 +68,8 @@ export async function improveSuggestion(suggestion, selectedCategories = []) {
         user_input: suggestion,
         improve_toxicity: selectedCategories.includes('toxicity'),
         improve_prosocial: selectedCategories.includes('proSocial'),
+        improve_thoughtfulness: selectedCategories.includes('thoughtfulness'),
+        improve_empathy: selectedCategories.includes('empathy')
     };
     const data = await request('/rephrase', {
         method: 'POST',

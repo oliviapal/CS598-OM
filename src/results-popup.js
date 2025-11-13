@@ -19,10 +19,17 @@ export class ResultsPopup {
     /**
      * Create and show the popup with analysis results
      * @param {Object} results - Analysis results from backend
-     * @param {string} results.toxicity - Toxicity score
-     * @param {string} results.empathy - Empathy score
-     * @param {string} results.thoughtfulness - Thoughtfulness score
-     * @param {string} results.proSocial - Pro-social score
+     * 
+     * @param {string} results.old_toxicity - Toxicity score
+     * @param {string} results.old_empathy - Empathy score
+     * @param {string} results.old_thoughtfulness - Thoughtfulness score
+     * @param {string} results.old_proSocial - Pro-social score
+     * 
+     * @param {string} results.new_toxicity - Toxicity score
+     * @param {string} results.new_empathy - Empathy score
+     * @param {string} results.new_thoughtfulness - Thoughtfulness score
+     * @param {string} results.new_proSocial - Pro-social score
+     * 
      * @param {string} results.suggestion - Rephrased suggestion
      * @param {HTMLElement} targetElement - The element to replace text in
      */
@@ -50,19 +57,35 @@ export class ResultsPopup {
                     <h4>Scores</h4>
                     <div class="score-item">
                         <span class="score-label">Toxicity:</span>
-                        <span class="${getScoreColor('toxicity', results.toxicity)}">${this.escapeHtml(results.toxicity)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('toxicity', results.old_toxicity)}">${this.escapeHtml(results.old_toxicity)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('toxicity', results.new_toxicity)}">${this.escapeHtml(results.new_toxicity)}</span>
+                        </span>
                     </div>
                     <div class="score-item">
                         <span class="score-label">Empathy:</span>
-                        <span class="${getScoreColor('empathy', results.empathy)}">${this.escapeHtml(results.empathy)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('empathy', results.old_empathy)}">${this.escapeHtml(results.old_empathy)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('empathy', results.new_empathy)}">${this.escapeHtml(results.new_empathy)}</span>
+                        </span>
                     </div>
                     <div class="score-item">
                         <span class="score-label">Thoughtfulness:</span>
-                        <span class="${getScoreColor('thoughtfulness', results.thoughtfulness)}">${this.escapeHtml(results.thoughtfulness)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('thoughtfulness', results.old_thoughtfulness)}">${this.escapeHtml(results.old_thoughtfulness)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('thoughtfulness', results.new_thoughtfulness)}">${this.escapeHtml(results.new_thoughtfulness)}</span>
+                        </span>
                     </div>
                     <div class="score-item">
                         <span class="score-label">Pro-Social:</span>
-                        <span class="${getScoreColor('proSocial', results.proSocial)}">${this.escapeHtml(results.proSocial)}</span>
+                        <span class="score-comparison">
+                            <span class="${getScoreColor('proSocial', results.old_proSocial)}">${this.escapeHtml(results.old_proSocial)}</span>
+                            <span class="score-arrow">→</span>
+                            <span class="${getScoreColor('proSocial', results.new_proSocial)}">${this.escapeHtml(results.new_proSocial)}</span>
+                        </span>
                     </div>
                 </div>
                 <!-- Suggestion Section -->
@@ -205,10 +228,10 @@ export class ResultsPopup {
     showImprovePopup(currentSuggestion) {
         // Pass suggestion and scores to improvePopup
         const scores = {
-            toxicity: this.lastResults?.toxicity || '',
-            empathy: this.lastResults?.empathy || '',
-            thoughtfulness: this.lastResults?.thoughtfulness || '',
-            proSocial: this.lastResults?.proSocial || ''
+            toxicity: this.lastResults?.new_toxicity || '',
+            empathy: this.lastResults?.new_empathy || '',
+            thoughtfulness: this.lastResults?.new_thoughtfulness || '',
+            proSocial: this.lastResults?.new_proSocial || ''
         };
         improvePopup.show(
             { suggestion: currentSuggestion, scores },
