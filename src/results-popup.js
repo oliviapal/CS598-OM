@@ -22,12 +22,12 @@ export class ResultsPopup {
      * 
      * @param {string} results.old_toxicity - Toxicity score
      * @param {string} results.old_empathy - Empathy score
-     * @param {string} results.old_thoughtfulness - Thoughtfulness score
+     * @param {string} results.old_politeness - Politeness score
      * @param {string} results.old_proSocial - Pro-social score
      * 
      * @param {string} results.new_toxicity - Toxicity score
      * @param {string} results.new_empathy - Empathy score
-     * @param {string} results.new_thoughtfulness - Thoughtfulness score
+     * @param {string} results.new_politeness - Politeness score
      * @param {string} results.new_proSocial - Pro-social score
      * 
      * @param {string} results.suggestion - Rephrased suggestion
@@ -72,11 +72,11 @@ export class ResultsPopup {
                         </span>
                     </div>
                     <div class="score-item">
-                        <span class="score-label">Thoughtfulness:</span>
+                        <span class="score-label">Politeness:</span>
                         <span class="score-comparison">
-                            <span class="${getScoreColor('thoughtfulness', results.old_thoughtfulness)}">${this.escapeHtml(results.old_thoughtfulness)}</span>
+                            <span class="${getScoreColor('politeness', results.old_politeness)}">${this.escapeHtml(results.old_politeness)}</span>
                             <span class="score-arrow">→</span>
-                            <span class="${getScoreColor('thoughtfulness', results.new_thoughtfulness)}">${this.escapeHtml(results.new_thoughtfulness)}</span>
+                            <span class="${getScoreColor('politeness', results.new_politeness)}">${this.escapeHtml(results.new_politeness)}</span>
                         </span>
                     </div>
                     <div class="score-item">
@@ -230,7 +230,7 @@ export class ResultsPopup {
         const scores = {
             toxicity: this.lastResults?.new_toxicity || '',
             empathy: this.lastResults?.new_empathy || '',
-            thoughtfulness: this.lastResults?.new_thoughtfulness || '',
+            politeness: this.lastResults?.new_politeness || '',
             proSocial: this.lastResults?.new_proSocial || ''
         };
         improvePopup.show(

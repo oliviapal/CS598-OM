@@ -10,7 +10,7 @@ export function showTestPopup() {
     const sampleResults = {
         toxicity: "0.23 (Low)",
         empathy: "0.87 (High)",
-        thoughtfulness: "0.75 (Good)",
+        politeness: "0.75 (Good)",
         proSocial: "0.91 (Excellent)",
         suggestion: "I really appreciate your perspective on this matter. It would be great if we could discuss this further and find a solution that works for everyone."
     };

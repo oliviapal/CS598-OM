@@ -1,0 +1,6 @@
+{
+    "empathy_instruction": "Rephrase the user input to make it more empathetic and understanding, expressing care, perspective-taking, and emotional sensitivity.",
+    "toxicity_instruction": "Rephrase the user input to reduce toxicity, hostility, insults, or offensive tones. Make the expression more respectful and constructive while preserving the intended message.",
+    "politeness_instruction": "Rephrase the user input to make it more polite, courteous, and professional. Use softening language, indirectness, and respectful phrasing as needed.",
+    "prosocial_instruction": "Rephrase the user input to encourage cooperation, mutual understanding, and respectful interaction. Make the tone more collaborative and constructive, promoting shared problem-solving or openness."
+}

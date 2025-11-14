@@ -33,28 +33,28 @@ export async function analyzeText(text) {
         body: JSON.stringify(payload),
     });
 
-    // get the verdict result
-    const verdict = data?.verdict || null;
-    const rephrase_data = await request('/rephrase', {
-        method: 'POST',
-        body: JSON.stringify({
-            user_input: text,
-            input_label: verdict?.label || 'N/A',
-            // the verdict.reasons is also a dictionary, we convert it to string for rephrase_note
-            rephrase_reasons: JSON.stringify(verdict?.reasons || {}),
-        }),
-    });
+    // // get the verdict result
+    // const verdict = data?.verdict || null;
+    // const rephrase_data = await request('/rephrase', {
+    //     method: 'POST',
+    //     body: JSON.stringify({
+    //         user_input: text,
+    //         input_label: verdict?.label || 'N/A',
+    //         // the verdict.reasons is also a dictionary, we convert it to string for rephrase_note
+    //         rephrase_reasons: JSON.stringify(verdict?.reasons || {}),
+    //     }),
+    // });
 
     return {
         old_toxicity: data?.old_toxicity || 'N/A',
         old_empathy: data?.old_sentiment || 'N/A',
-        old_thoughtfulness: data?.old_thoughtfulness || 'N/A',
+        old_politeness: data?.old_politeness || 'N/A',
         old_proSocial: data?.old_proSocial || 'N/A',
         new_toxicity: data?.new_toxicity || 'N/A',
         new_empathy: data?.new_empathy || 'N/A',
-        new_thoughtfulness: data?.new_thoughtfulness || 'N/A',
+        new_politeness: data?.new_politeness || 'N/A',
         new_proSocial: data?.new_proSocial || 'N/A',
-        suggestion: rephrase_data?.rephrased_text || 'N/A',
+        suggestion: data?.rephrased_text || 'N/A',
     };
 }
 
@@ -64,24 +64,24 @@ export async function analyzeText(text) {
  * @param {string[]} selectedCategories e.g., ['toxicity','proSocial']
  */
 export async function improveSuggestion(suggestion, selectedCategories = []) {
-    var improve_prompt = 'Please improve the following text to make it more ';
-    if (selectedCategories.includes('toxicity')) {
-        improve_prompt += 'non-toxic & polite, ';
-    }
-    if (selectedCategories.includes('proSocial')) {
-        improve_prompt += 'pro-social, ';
-    }
-    if (selectedCategories.includes('thoughtfulness')) {
-        improve_prompt += 'thoughtful, ';
-    }
-    if (selectedCategories.includes('empathy')) {
-        improve_prompt += 'empathetic, ';
-    }
+    // var improve_prompt = 'Please improve the following text to make it more ';
+    // if (selectedCategories.includes('toxicity')) {
+    //     improve_prompt += 'non-toxic & polite, ';
+    // }
+    // if (selectedCategories.includes('proSocial')) {
+    //     improve_prompt += 'pro-social, ';
+    // }
+    // if (selectedCategories.includes('politeness')) {
+    //     improve_prompt += 'polite, ';
+    // }
+    // if (selectedCategories.includes('empathy')) {
+    //     improve_prompt += 'empathetic, ';
+    // }
     const payload = {
         user_input: suggestion,
         improve_toxicity: selectedCategories.includes('toxicity'),
         improve_prosocial: selectedCategories.includes('proSocial'),
-        improve_thoughtfulness: selectedCategories.includes('thoughtfulness'),
+        improve_politeness: selectedCategories.includes('politeness'),
         improve_empathy: selectedCategories.includes('empathy')
     };
     const data = await request('/rephrase', {

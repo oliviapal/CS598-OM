@@ -1,5 +1,5 @@
 from email.mime import text
-import torch
+import json
 import os
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
@@ -18,43 +18,37 @@ with open(os.path.join(BASE_DIR, "prompts/system.txt"), "r") as f:
     SYSTEM_PROMPT = f.read()
     f.close()
 
-with open(os.path.join(BASE_DIR, "prompts/toxicity.txt"), "r") as f:
-    toxicity_prompt = f.read()
-    f.close()
-
-with open(os.path.join(BASE_DIR, "prompts/politeness.txt"), "r") as f:
-    politeness_prompt = f.read()
-    f.close()
-
-with open(os.path.join(BASE_DIR, "prompts/empathy.txt"), "r") as f:
-    empathy_prompt = f.read()
-    f.close()
-
-with open(os.path.join(BASE_DIR, "prompts/pro-social.txt"), "r") as f:
-    pro_social_prompt = f.read()
+with open(os.path.join(BASE_DIR, "prompts/specific.txt"), "r") as f:
+    specific_prompt = f.read()
     f.close()
     
 with open(os.path.join(BASE_DIR, "prompts/synthesized.txt"), "r") as f:
     synthesized_prompt = f.read()
     f.close()
+    
+with open(os.path.join(BASE_DIR, "prompts/instructions.json"), "r") as f:
+    instructions = json.load(f)
+    f.close()
 
-def generate_prompt(user_input: str, goal: str, scores: dict = None) -> str:
-    if goal == "toxicity":
-        prompt = toxicity_prompt.replace("<<USER_INPUT>>", user_input)
-    elif goal == "politeness":
-        prompt = politeness_prompt.replace("<<USER_INPUT>>", user_input)
-    elif goal == "empathy":
-        prompt = empathy_prompt.replace("<<USER_INPUT>>", user_input)
-    elif goal == "pro-social":
-        prompt = pro_social_prompt.replace("<<USER_INPUT>>", user_input)
-    elif goal == "synthesized" and scores is not None:
+def generate_prompt(user_input: str, goal: list, scores: dict = None) -> str:
+    if goal == ["synthesized"] and scores is not None:
         prompt = synthesized_prompt.replace("<<USER_INPUT>>", user_input)
         prompt = prompt.replace("<<TOXICITY_SCORE>>", f"{scores.get('toxicity', 'NaN'):.4f}")
         prompt = prompt.replace("<<EMPATHY_SCORE>>", f"{scores.get('empathy', 'NaN'):.4f}")
         prompt = prompt.replace("<<POLITENESS_SCORE>>", f"{scores.get('politeness', 'NaN'):.4f}")
         prompt = prompt.replace("<<PRO_SOCIAL_SCORE>>", f"{scores.get('pro_social', 'NaN'):.4f}")
     else:
-        raise ValueError("Invalid goal or missing scores for synthesized prompt.")
+        instructions_prompt = ""
+        if "toxicity" in goal:
+            instructions_prompt += instructions["toxicity_instruction"] + " "
+        if "empathy" in goal:
+            instructions_prompt += instructions["empathy_instruction"] + " "
+        if "politeness" in goal:
+            instructions_prompt += instructions["politeness_instruction"] + " "
+        if "pro_social" in goal:
+            instructions_prompt += instructions["prosocial_instruction"] + " "
+        prompt = specific_prompt.replace("<<USER_INPUT>>", user_input)
+        prompt = prompt.replace("<<TASK_INSTRUCTION>>", instructions_prompt.strip())
     return prompt
 
 def get_rephrased_text(user_prompt: str) -> str:

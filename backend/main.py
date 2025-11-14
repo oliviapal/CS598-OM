@@ -1,7 +1,7 @@
 from typing import Union
 from fastapi import FastAPI
 from pydantic import BaseModel
-from rephrase import get_rephrased_text
+from rephrase import get_rephrased_text, generate_prompt
 from fastapi.middleware.cors import CORSMiddleware
 from analyzer import analyze_text
 
@@ -22,29 +22,39 @@ async def read_root():
 # define request body model for REPHRASE endpoint
 class RephraseRequest(BaseModel):
     user_input: str
-    input_label: Union[str, None] = None
-    rephrase_reasons: Union[str, None] = None
+    improve_toxicity: Union[bool, None] = None
+    improve_politeness: Union[bool, None] = None
+    improve_empathy: Union[bool, None] = None
+    improve_prosocial: Union[bool, None] = None
+
 
 @app.post("/rephrase")
 async def rephrase_item(req: RephraseRequest):
     print(f"""[INFO] Received rephrase request:
-          item_id: {req.item_id}
           user_input: {req.user_input}
-          input_label: {req.input_label}
-          rephrase_reasons: {req.rephrase_reasons}""")
-    rephrased_text = get_rephrased_text(req.user_input, req.input_label, req.rephrase_reasons).replace("<pad>", "").replace("</s>", "").strip()
-    print(f"[INFO] Rephrased text: {rephrased_text}")
-    return {"item_id": req.item_id, "original_text": req.user_input, "rephrased_text": rephrased_text}
+          improve_toxicity: {req.improve_toxicity}
+          improve_politeness: {req.improve_politeness}
+          improve_empathy: {req.improve_empathy}
+          improve_prosocial: {req.improve_prosocial}""")
+    goals = []
+    if req.improve_toxicity:
+        goals.append("toxicity")
+    if req.improve_politeness:
+        goals.append("politeness")
+    if req.improve_empathy:
+        goals.append("empathy")
+    if req.improve_prosocial:
+        goals.append("pro_social")
+    rephrased_text = get_rephrased_text(generate_prompt(req.user_input, goals))
+    return {"original_text": req.user_input, "rephrased_text": rephrased_text}
 
 @app.post("/analyze")
 async def analyze_item(req: RephraseRequest):
     print(f"""[INFO] Received analyze request:
-          item_id: {req.item_id}
           user_input: {req.user_input}""")
     analysis = analyze_text(req.user_input)
     print(f"[INFO] Analysis results: {analysis}")
     return {
-        "item_id": req.item_id, 
         "original_text": req.user_input,
         "toxicity": analysis["tone_risk_label"],
         "sentiment": "Negative" if analysis["sentiment"]["compound"] < -0.05 else "Positive" if analysis["sentiment"]["compound"] > 0.05 else "Neutral",

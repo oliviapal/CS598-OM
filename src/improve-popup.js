@@ -17,7 +17,7 @@ export class ImprovePopup {
      * @param {Function} onCancel - callback()
      */
     show(suggestionData, onSubmit, onCancel) {
-        // suggestionData: { suggestion, scores: { toxicity, empathy, thoughtfulness, proSocial } }
+        // suggestionData: { suggestion, scores: { toxicity, empathy, politeness, proSocial } }
         const { suggestion, scores } = suggestionData;
         this.popup = document.createElement('div');
         this.popup.className = 'socially-popup socially-improve-popup';
@@ -36,7 +36,7 @@ export class ImprovePopup {
                     <div class="improve-checklist">
                         <label><input type="checkbox" class="improve-checkbox" value="toxicity"> Toxicity <span class="score-badge ${getScoreColor('toxicity', scores.toxicity)}">${this.escapeHtml(scores.toxicity)}</span></label><br>
                         <label><input type="checkbox" class="improve-checkbox" value="empathy"> Empathy <span class="score-badge ${getScoreColor('empathy', scores.empathy)}">${this.escapeHtml(scores.empathy)}</span></label><br>
-                        <label><input type="checkbox" class="improve-checkbox" value="thoughtfulness"> Thoughtfulness <span class="score-badge ${getScoreColor('thoughtfulness', scores.thoughtfulness)}">${this.escapeHtml(scores.thoughtfulness)}</span></label><br>
+                        <label><input type="checkbox" class="improve-checkbox" value="politeness"> Politeness <span class="score-badge ${getScoreColor('politeness', scores.politeness)}">${this.escapeHtml(scores.politeness)}</span></label><br>
                         <label><input type="checkbox" class="improve-checkbox" value="proSocial"> Pro-Social <span class="score-badge ${getScoreColor('proSocial', scores.proSocial)}">${this.escapeHtml(scores.proSocial)}</span></label>
                     </div>
                 </div>
