@@ -59,26 +59,13 @@ export async function analyzeText(text) {
 }
 
 /**
- * Improve an existing suggestion focused on selected categories
- * @param {string} suggestion The current suggestion text
+ * Improve the user original text by focusing on selected categories
+ * @param {string} original_text The current suggestion text
  * @param {string[]} selectedCategories e.g., ['toxicity','proSocial']
  */
-export async function improveSuggestion(suggestion, selectedCategories = []) {
-    // var improve_prompt = 'Please improve the following text to make it more ';
-    // if (selectedCategories.includes('toxicity')) {
-    //     improve_prompt += 'non-toxic & polite, ';
-    // }
-    // if (selectedCategories.includes('proSocial')) {
-    //     improve_prompt += 'pro-social, ';
-    // }
-    // if (selectedCategories.includes('politeness')) {
-    //     improve_prompt += 'polite, ';
-    // }
-    // if (selectedCategories.includes('empathy')) {
-    //     improve_prompt += 'empathetic, ';
-    // }
+export async function improveSuggestion(original_text, selectedCategories = []) {
     const payload = {
-        user_input: suggestion,
+        user_input: original_text,
         improve_toxicity: selectedCategories.includes('toxicity'),
         improve_prosocial: selectedCategories.includes('proSocial'),
         improve_politeness: selectedCategories.includes('politeness'),

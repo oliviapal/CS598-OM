@@ -51,6 +51,9 @@ export function attachToEditable(el, options = {}) {
             const results = await analyzeText(text);
             console.log('Analysis results:', results);
 
+            // Ensure original user text is passed along for Improve flow
+            try { results.original_text = text; } catch (_) { }
+
             // Show results popup with reference to the element
             resultsPopup.show(results, el);
 

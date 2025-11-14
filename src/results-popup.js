@@ -13,6 +13,7 @@ export class ResultsPopup {
         this.targetElement = null; // Store reference to the element being edited
         this.improvePopup = null; // Store reference to improve popup
         this.escHandler = null; // Store ESC handler for cleanup
+        this.originalText = null; // Original user input text
     }
 
 
@@ -36,6 +37,7 @@ export class ResultsPopup {
     show(results, targetElement = null) {
         this.targetElement = targetElement;
         this.lastResults = results;
+        this.originalText = results && typeof results.original_text === 'string' ? results.original_text : null;
 
         // Clean up any existing popup (like loading screen) first
         this.forceClosePopup();
@@ -154,7 +156,8 @@ export class ResultsPopup {
         // Improve button
         const improveBtn = this.popup.querySelector('.socially-improve-btn');
         improveBtn.addEventListener('click', () => {
-            this.showImprovePopup(suggestionText);
+            const textForImprove = this.originalText || suggestionText || '';
+            this.showImprovePopup(textForImprove);
         });
 
         // ESC key to close
@@ -225,8 +228,8 @@ export class ResultsPopup {
     /**
      * Show the improve popup
      */
-    showImprovePopup(currentSuggestion) {
-        // Pass suggestion and scores to improvePopup
+    showImprovePopup(original_text) {
+        // Pass original text and ORIGINAL (old_*) scores to improvePopup
         const scores = {
             toxicity: this.lastResults?.new_toxicity || '',
             empathy: this.lastResults?.new_empathy || '',
@@ -234,7 +237,7 @@ export class ResultsPopup {
             proSocial: this.lastResults?.new_proSocial || ''
         };
         improvePopup.show(
-            { suggestion: currentSuggestion, scores },
+            { suggestion: original_text, scores },
             (data) => this.submitImprovement(data.suggestion, data.selectedCategories, data.scores),
             () => { }
         );
