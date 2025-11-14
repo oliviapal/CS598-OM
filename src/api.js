@@ -59,13 +59,13 @@ export async function analyzeText(text) {
 }
 
 /**
- * Improve an existing suggestion focused on selected categories
- * @param {string} suggestion The current suggestion text
+ * Improve the user original text by focusing on selected categories
+ * @param {string} original_text The current suggestion text
  * @param {string[]} selectedCategories e.g., ['toxicity','proSocial']
  */
-export async function improveSuggestion(suggestion, selectedCategories = []) {
+export async function improveSuggestion(original_text, selectedCategories = []) {
     const payload = {
-        user_input: suggestion,
+        user_input: original_text,
         improve_toxicity: selectedCategories.includes('toxicity'),
         improve_prosocial: selectedCategories.includes('proSocial'),
         improve_thoughtfulness: selectedCategories.includes('thoughtfulness'),

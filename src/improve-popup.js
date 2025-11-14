@@ -12,13 +12,13 @@ export class ImprovePopup {
 
     /**
      * Show the improve popup with checklist for categories
-     * @param {Object} suggestionData - { suggestion, scores }
+     * @param {Object} suggestionData - { original_text, scores }
      * @param {Function} onSubmit - callback(selectedCategories)
      * @param {Function} onCancel - callback()
      */
     show(suggestionData, onSubmit, onCancel) {
-        // suggestionData: { suggestion, scores: { toxicity, empathy, thoughtfulness, proSocial } }
-        const { suggestion, scores } = suggestionData;
+        // suggestionData: { original_text, scores: { toxicity, empathy, thoughtfulness, proSocial } }
+        const { original_text, scores } = suggestionData;
         this.popup = document.createElement('div');
         this.popup.className = 'socially-popup socially-improve-popup';
         this.popup.innerHTML = `
@@ -29,7 +29,7 @@ export class ImprovePopup {
             <div class="socially-popup-body">
                 <p>Current suggestion:</p>
                 <div class="improve-current-text">
-                    ${this.escapeHtml(suggestion)}
+                    ${this.escapeHtml(original_text)}
                 </div>
                 <div class="improve-input-section">
                     <label>Select categories to improve:</label>
@@ -70,7 +70,7 @@ export class ImprovePopup {
             // Gather selected categories
             const checked = Array.from(this.popup.querySelectorAll('.improve-checkbox:checked')).map(cb => cb.value);
             if (onSubmit) onSubmit({
-                suggestion,
+                original_text,
                 selectedCategories: checked,
                 scores
             });
