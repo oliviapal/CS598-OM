@@ -170,6 +170,14 @@
   color: #333;
 }
 
+.score-legend {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+}
+
 .score-item {
   display: flex;
   justify-content: space-between;

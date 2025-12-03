@@ -2,7 +2,7 @@
 
 import { improvePopup } from './improve-popup.js';
 import { getScoreColor } from './helpers.js';
-import { improveSuggestion } from './api.js';
+import { improveSuggestion, analyzeText } from './api.js';
 import { confirmPopup } from './confirm-popup.js';
 
 // Creates and manages the analysis results popup
@@ -50,13 +50,14 @@ export class ResultsPopup {
         // Build popup content
         this.popup.innerHTML = `
             <div class="socially-popup-header">
-                <h3>Analysis Results</h3>
+                <h3>Analysis Results & Suggestion</h3>
                 <button class="socially-close-btn" title="Close">&times;</button>
             </div>
             <div class="socially-popup-body">
                 <!-- Scores Section -->
                 <div class="socially-scores">
                     <h4>Scores</h4>
+                    <p class="score-legend">Original Score → Improved Score</p>
                     <div class="score-item">
                         <span class="score-label">Toxicity:</span>
                         <span class="score-comparison">
@@ -110,12 +111,7 @@ export class ResultsPopup {
                             </svg>
                             Dismiss
                         </button>
-                        <button class="socially-improve-btn" title="Improve further">
-                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
-                            </svg>
-                            Improve
-                        </button>
+
                     </div>
                 </div>
             </div>
@@ -153,12 +149,7 @@ export class ResultsPopup {
             this.dismissAndRefocus();
         });
 
-        // Improve button
-        const improveBtn = this.popup.querySelector('.socially-improve-btn');
-        improveBtn.addEventListener('click', () => {
-            const textForImprove = this.originalText || suggestionText || '';
-            this.showImprovePopup(textForImprove);
-        });
+
 
         // ESC key to close
         this.escHandler = (e) => {
@@ -226,21 +217,62 @@ export class ResultsPopup {
     }
 
     /**
-     * Show the improve popup
+     * Analyze first to get initial scores, then show improve popup with those scores
      */
-    showImprovePopup(original_text) {
-        // Pass original text and ORIGINAL (old_*) scores to improvePopup
-        const scores = {
-            toxicity: this.lastResults?.old_toxicity || '',
-            empathy: this.lastResults?.old_empathy || '',
-            thoughtfulness: this.lastResults?.old_thoughtfulness || '',
-            proSocial: this.lastResults?.old_proSocial || ''
-        };
-        improvePopup.show(
-            { suggestion: original_text, scores },
-            (data) => this.submitImprovement(data.suggestion, data.selectedCategories, data.scores),
-            () => { }
-        );
+    async analyzeAndShowImprovePopup(text, targetElement) {
+        this.originalText = text;
+        this.targetElement = targetElement;
+
+        this.showLoading();
+
+        try {
+            // Get initial analysis to have scores for the improve popup
+            const initialResults = await analyzeText(text);
+            console.log('Initial analysis results:', initialResults);
+
+            // Store initial results
+            this.initialResults = initialResults;
+
+            // Hide loading and show improve popup WITH the initial scores
+            this.forceClosePopup();
+
+            const scores = {
+                toxicity: initialResults?.old_toxicity || 'N/A',
+                empathy: initialResults?.old_empathy || 'N/A',
+                thoughtfulness: initialResults?.old_thoughtfulness || 'N/A',
+                proSocial: initialResults?.old_proSocial || 'N/A'
+            };
+
+            improvePopup.show(
+                { original_text: text, scores },
+                async (data) => {
+                    // User selected categories - show results with improvement
+                    await this.showResultsWithImprovement(text, data.selectedCategories, targetElement);
+                },
+                () => {
+                    // User cancelled - do nothing
+                }
+            );
+
+        } catch (error) {
+            console.error('Error analyzing text:', error);
+            this.showError(`Failed to analyze text: ${error.message}`);
+        }
+    }
+
+    /**
+     * Show results (we already have initial analysis, just display it)
+     */
+    async showResultsWithImprovement(text, selectedCategories, targetElement) {
+        // We already have the analysis results from initial analysis
+        const results = this.initialResults;
+
+        // Store original text and selected categories
+        try { results.original_text = text; } catch (_) { }
+        try { results.selectedCategories = selectedCategories; } catch (_) { }
+
+        // Show results popup with reference to the element
+        this.show(results, targetElement);
     }
 
     /**
