@@ -48,6 +48,8 @@ export class ResultsPopup {
         this.popup.className = 'socially-popup';
         // print results for debugging
         console.log('Showing results popup with data:', results);
+        const suggestionText = (results && (results.rephrased_text || results.suggestion)) || '';
+
         // Build popup content
         this.popup.innerHTML = `
             <div class="socially-popup-header">
@@ -95,7 +97,7 @@ export class ResultsPopup {
                 <div class="socially-suggestion">
                     <h4>Suggested Rephrase</h4>
                     <div class="suggestion-text">
-                        ${this.escapeHtml(results.rephrased_text)}
+                        ${this.escapeHtml(suggestionText)}
                     </div>
                     <div class="socially-action-buttons">
                         <button class="socially-accept-btn" title="Accept suggestion">
@@ -121,7 +123,7 @@ export class ResultsPopup {
         document.body.appendChild(this.popup);
 
         // Add event listeners
-        this.attachEventListeners(results.suggestion);
+        this.attachEventListeners(suggestionText);
 
         // Add animation class
         setTimeout(() => {
@@ -264,15 +266,24 @@ export class ResultsPopup {
      * Show results (we already have initial analysis, just display it)
      */
     async showResultsWithImprovement(text, selectedCategories, targetElement) {
-        // We already have the analysis results from initial analysis
-        const improved = await improveSuggestion(text, selectedCategories);
+        // Show loading while generating improved text
+        this.showLoading('Improving...', 'Please wait while we generate an improved suggestion...');
 
-        // Store original text and selected categories
-        try { improved.original_text = text; } catch (_) { }
-        try { improved.selectedCategories = selectedCategories; } catch (_) { }
+        try {
+            // We already have the analysis results from initial analysis
+            const improved = await improveSuggestion(text, selectedCategories);
 
-        // Show results popup with reference to the element
-        this.show(improved, targetElement);
+            // Store original text and selected categories
+            try { improved.original_text = text; } catch (_) { }
+            try { improved.selectedCategories = selectedCategories; } catch (_) { }
+
+            // Show results popup with reference to the element
+            this.forceClosePopup();
+            this.show(improved, targetElement);
+        } catch (error) {
+            console.error('Error improving text:', error);
+            this.showError(`Failed to improve text: ${error.message || error}`);
+        }
     }
 
     /**
@@ -400,7 +411,7 @@ export class ResultsPopup {
     /**
      * Show loading state
      */
-    showLoading() {
+    showLoading(title = 'Analyzing...', message = 'Please wait while we analyze your text...') {
         // Force close any existing popup immediately
         this.forceClosePopup();
         // Also clean up any stray popups in the DOM
@@ -410,12 +421,12 @@ export class ResultsPopup {
         this.popup.className = 'socially-popup socially-loading-popup';
         this.popup.innerHTML = `
             <div class="socially-popup-header">
-                <h3>Analyzing...</h3>
+                <h3>${this.escapeHtml(title)}</h3>
             </div>
             <div class="socially-popup-body">
                 <div class="socially-loading">
                     <div class="spinner"></div>
-                    <p>Please wait while we analyze your text...</p>
+                    <p>${this.escapeHtml(message)}</p>
                 </div>
             </div>
         `;
