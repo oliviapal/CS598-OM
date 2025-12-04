@@ -33,10 +33,10 @@ with open(os.path.join(BASE_DIR, "prompts/instructions.json"), "r") as f:
 def generate_prompt(user_input: str, goal: list, scores: dict = None) -> str:
     if goal == ["synthesized"] and scores is not None:
         prompt = synthesized_prompt.replace("<<USER_INPUT>>", user_input)
-        prompt = prompt.replace("<<TOXICITY_SCORE>>", f"{scores.get('toxicity', 'NaN'):.4f}")
-        prompt = prompt.replace("<<EMPATHY_SCORE>>", f"{scores.get('empathy', 'NaN'):.4f}")
-        prompt = prompt.replace("<<POLITENESS_SCORE>>", f"{scores.get('politeness', 'NaN'):.4f}")
-        prompt = prompt.replace("<<PRO_SOCIAL_SCORE>>", f"{scores.get('pro_social', 'NaN'):.4f}")
+        prompt = prompt.replace("<<TOXICITY_SCORE>>", f"{scores.get('toxicity', 'NaN')}")
+        prompt = prompt.replace("<<EMPATHY_SCORE>>", f"{scores.get('empathy', 'NaN')}")
+        prompt = prompt.replace("<<POLITENESS_SCORE>>", f"{scores.get('politeness', 'NaN')}")
+        prompt = prompt.replace("<<PRO_SOCIAL_SCORE>>", f"{scores.get('prosocial', 'NaN')}")
     else:
         instructions_prompt = ""
         if "toxicity" in goal:

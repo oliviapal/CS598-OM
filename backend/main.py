@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from rephrase import get_rephrased_text, generate_prompt
 from fastapi.middleware.cors import CORSMiddleware
-from analyzer import analyze_text
+from analyzer import analyze_text_simple, _toxicity_improve, _others_improve
 
 app = FastAPI()
 
@@ -52,13 +52,69 @@ async def rephrase_item(req: RephraseRequest):
 async def analyze_item(req: RephraseRequest):
     print(f"""[INFO] Received analyze request:
           user_input: {req.user_input}""")
-    analysis = analyze_text(req.user_input)
-    print(f"[INFO] Analysis results: {analysis}")
+    initial_analysis = analyze_text_simple(req.user_input)
+    print(f"[INFO] Analysis results: {initial_analysis}")
+    if(initial_analysis["should_rewrite"]):
+        # start the rephrasing process
+        count = 0
+        success = False
+        text_to_rephrase = req.user_input
+        while count < 4:
+            print("[INFO] Starting rephrasing process based on analysis results.")
+            rephrased_text = get_rephrased_text(generate_prompt(
+                text_to_rephrase,
+                ["synthesized"],
+                {
+                    "toxicity": initial_analysis["toxicity"],
+                    "empathy": initial_analysis["empathy"],
+                    "politeness": initial_analysis["politeness"],
+                    "pro_social": initial_analysis["prosocial"]
+                }
+            ))
+            print(f"[INFO] Rephrased text (attempt {count + 1}): {rephrased_text}")
+            # analyze the rephrased text
+            new_analysis = analyze_text_simple(rephrased_text)
+            if not new_analysis["should_rewrite"]:
+                success = True
+                break
+            if (  # check if there is any improvement
+                _toxicity_improve(initial_analysis["toxicity"], new_analysis["toxicity"]) or
+                _others_improve(initial_analysis["empathy"], new_analysis["empathy"]) or
+                _others_improve(initial_analysis["politeness"], new_analysis["politeness"]) or
+                _others_improve(initial_analysis["prosocial"], new_analysis["prosocial"])
+            ):
+                success = True
+                break
+            text_to_rephrase = rephrased_text
+            count += 1
+        # after max 4 attempts
+        if not success:
+            print("[WARN] Rephrasing attempts exhausted without satisfactory improvement.")
+            rephrased_text = "Sorry, we couldn't improve the text after multiple attempts. Please try rephrasing it manually."
+            new_analysis = {
+                "toxicity": "N/A",
+                "empathy": "N/A",
+                "politeness": "N/A",
+                "prosocial": "N/A"
+            }
+    else:
+        rephrased_text = "No rephrasing needed."
+        new_analysis = {
+            "toxicity": "N/A",
+            "empathy": "N/A",
+            "politeness": "N/A",
+            "prosocial": "N/A"
+        }
+            
     return {
         "original_text": req.user_input,
-        "toxicity": analysis["tone_risk_label"],
-        "sentiment": "Negative" if analysis["sentiment"]["compound"] < -0.05 else "Positive" if analysis["sentiment"]["compound"] > 0.05 else "Neutral",
-        "thoughtfulness": "Neutral" if analysis["liwc_like"]["cognitive"] <= 0 else "Thoughtful",
-        "proSocial": "High" if analysis["prosocial_estimate"] > 0.7 else "Medium" if analysis["prosocial_estimate"] > 0.3 else "Low",
-        "verdict": analysis["verdict"]
+        "old_toxicity": initial_analysis["toxicity"],
+        "old_empathy": initial_analysis["empathy"],
+        "old_politeness": initial_analysis["politeness"],
+        "old_proSocial": initial_analysis["prosocial"],
+        "new_toxicity": new_analysis["toxicity"],
+        "new_empathy": new_analysis["empathy"],
+        "new_politeness": new_analysis["politeness"],
+        "new_proSocial": new_analysis["prosocial"],
+        "rephrased_text": rephrased_text
     }

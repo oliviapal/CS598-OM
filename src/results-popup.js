@@ -231,14 +231,14 @@ export class ResultsPopup {
     showImprovePopup(original_text) {
         // Pass original text and ORIGINAL (old_*) scores to improvePopup
         const scores = {
-            toxicity: this.lastResults?.new_toxicity || '',
-            empathy: this.lastResults?.new_empathy || '',
-            politeness: this.lastResults?.new_politeness || '',
-            proSocial: this.lastResults?.new_proSocial || ''
+            toxicity: this.lastResults?.old_toxicity || '',
+            empathy: this.lastResults?.old_empathy || '',
+            politeness: this.lastResults?.old_politeness || '',
+            proSocial: this.lastResults?.old_proSocial || ''
         };
         improvePopup.show(
-            { suggestion: original_text, scores },
-            (data) => this.submitImprovement(data.suggestion, data.selectedCategories, data.scores),
+            { original_text, scores },
+            (data) => this.submitImprovement(data.original_text, data.selectedCategories, data.scores),
             () => { }
         );
     }

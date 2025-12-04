@@ -19,6 +19,7 @@ export class ImprovePopup {
     show(suggestionData, onSubmit, onCancel) {
         // suggestionData: { original_text, scores: { toxicity, empathy, thoughtfulness, proSocial } }
         const { original_text, scores } = suggestionData;
+        console.log('Showing improve popup for text:', original_text, 'with scores:', scores);
         this.popup = document.createElement('div');
         this.popup.className = 'socially-popup socially-improve-popup';
         this.popup.innerHTML = `
@@ -27,7 +28,7 @@ export class ImprovePopup {
                 <button class="socially-close-improve-btn" title="Close">&times;</button>
             </div>
             <div class="socially-popup-body">
-                <p>Current suggestion:</p>
+                <p>Your Input:</p>
                 <div class="improve-current-text">
                     ${this.escapeHtml(original_text)}
                 </div>

@@ -47,7 +47,7 @@ export async function analyzeText(text) {
 
     return {
         old_toxicity: data?.old_toxicity || 'N/A',
-        old_empathy: data?.old_sentiment || 'N/A',
+        old_empathy: data?.old_empathy || 'N/A',
         old_politeness: data?.old_politeness || 'N/A',
         old_proSocial: data?.old_proSocial || 'N/A',
         new_toxicity: data?.new_toxicity || 'N/A',

@@ -97,7 +97,10 @@ def score_empathy(text: str) -> float:
     output = model(**encoded_input)
     scores = output[0][0].detach().numpy()
     scores = tf.nn.softmax(scores)
-    return float(scores.numpy()[1])
+    
+    print(f"Text: {text}\n")
+    print(f"Empathy probabilities: {scores.numpy()}\n")
+    return scores.numpy()[0]
 
 
 def score_politeness(text: str) -> float:
@@ -188,17 +191,15 @@ def toxicity_label(score: float) -> str:
         return "low"
     elif score < 0.5:
         return "medium"
-    elif score < 0.8:
-        return "high"
     else:
-        return "severe"
+        return "high"
 
 
 def empathy_label(score: float) -> str:
     """Convert empathy score to label"""
-    if score < 0.3:
+    if score < 0.05:
         return "low"
-    elif score < 0.7:
+    elif score < 0.1:
         return "medium"
     else:
         return "high"
@@ -230,7 +231,7 @@ def decide_rewrite_multidimensional(
     politeness: float, 
     prosocial: float,
     tox_threshold: float = 0.50,
-    empathy_threshold: float = 0.30,
+    empathy_threshold: float = 0.05,
     politeness_threshold: float = 0.40,
     prosocial_threshold: float = 0.40
 ) -> tuple[bool, list[str], dict[str, str]]:
@@ -275,8 +276,8 @@ def judge_text(metrics: Dict[str, Any],
                tox_hi: float = 0.7, 
                tox_med: float = 0.4,
                tox_lo: float = 0.2,
-               empathy_hi: float = 0.7,
-               empathy_lo: float = 0.3,
+               empathy_hi: float = 0.1,
+               empathy_lo: float = 0.05,
                politeness_hi: float = 0.7,
                politeness_lo: float = 0.4,
                prosocial_hi: float = 0.7, 
@@ -533,6 +534,15 @@ def _read_jsonl(fp: str, text_field: str) -> Iterable[str]:
             if isinstance(t, str):
                 yield t
 
+def _toxicity_improve(old_label: str, new_label: str) -> bool:
+    """Determine if toxicity improved based on labels"""
+    levels = {"low": 0, "medium": 1, "high": 2}
+    return levels.get(new_label, 999) < levels.get(old_label, 999)
+
+def _others_improve(old_label: str, new_label: str) -> bool:
+    """Determine if empathy/politeness/prosocial improved based on labels"""
+    levels = {"low": 0, "medium": 1, "high": 2}
+    return levels.get(new_label, -1) > levels.get(old_label, -1)
 
 def main():
     ap = argparse.ArgumentParser(description="Text analyzer with toxicity, empathy, politeness, and prosocial scoring")
