@@ -20,14 +20,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         if (contains) {
           console.log('background: permission already granted for', originPattern);
           // Inject and respond
-            chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['script.js'] }, () => {
+          chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['script.js'] }, () => {
             const execErr = chrome.runtime.lastError;
             if (execErr) {
               console.error('executeScript error', execErr);
               sendResponse({ granted: true, injected: false, error: String(execErr) });
               return;
             }
-              chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: ['script.css'] }, () => {
+            chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: ['script.css'] }, () => {
               const cssErr = chrome.runtime.lastError;
               if (cssErr) {
                 console.error('insertCSS error', cssErr);
@@ -45,14 +45,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           console.log('background: permissions.request callback, granted=', granted);
           if (granted) {
             // Try to inject JS then CSS
-              chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['script.js'] }, () => {
+            chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['script.js'] }, () => {
               const execErr = chrome.runtime.lastError;
               if (execErr) {
                 console.error('executeScript error after grant', execErr);
                 sendResponse({ granted: true, injected: false, error: String(execErr) });
                 return;
               }
-                chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: ['script.css'] }, () => {
+              chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: ['script.css'] }, () => {
                 const cssErr = chrome.runtime.lastError;
                 if (cssErr) {
                   console.error('insertCSS error after grant', cssErr);
@@ -86,14 +86,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
   console.log('background: inject-now for tab', tabId);
-    chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['script.js'] }, () => {
+  chrome.scripting.executeScript({ target: { tabId, allFrames: true }, files: ['script.js'] }, () => {
     const execErr = chrome.runtime.lastError;
     if (execErr) {
       console.error('executeScript inject-now error', execErr);
       sendResponse({ ok: false, error: String(execErr) });
       return;
     }
-      chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: ['script.css'] }, () => {
+    chrome.scripting.insertCSS({ target: { tabId, allFrames: true }, files: ['script.css'] }, () => {
       const cssErr = chrome.runtime.lastError;
       if (cssErr) {
         console.error('insertCSS inject-now error', cssErr);
@@ -104,4 +104,43 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     });
   });
   return true;
+});
+
+// API Proxy: Route fetch requests from content script to localhost backend
+// This bypasses Private Network Access restrictions since background scripts can call localhost
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!msg || msg.type !== 'api-proxy') return;
+
+  (async () => {
+    try {
+      const { url, options } = msg;
+      console.log('background: proxying API request to', url);
+
+      const resp = await fetch(url, {
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        method: options.method || 'GET',
+        body: options.body,
+      });
+
+      const responseData = {
+        ok: resp.ok,
+        status: resp.status,
+        statusText: resp.statusText,
+        headers: Object.fromEntries(resp.headers.entries()),
+      };
+
+      try {
+        responseData.json = await resp.json();
+      } catch (e) {
+        responseData.text = await resp.text();
+      }
+
+      sendResponse({ success: true, response: responseData });
+    } catch (err) {
+      console.error('background: API proxy error', err);
+      sendResponse({ success: false, error: String(err) });
+    }
+  })();
+
+  return true; // async response
 });

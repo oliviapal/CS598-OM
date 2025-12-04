@@ -41,28 +41,8 @@ export function attachToEditable(el, options = {}) {
             return;
         }
 
-        //showTestPopup();
-
-        // Show loading state
-        resultsPopup.showLoading();
-
-        try {
-            // Call backend API to analyze the text
-            const results = await analyzeText(text);
-            console.log('Analysis results:', results);
-
-            // Ensure original user text is passed along for Improve flow
-            try { results.original_text = text; } catch (_) { }
-
-            // Show results popup with reference to the element
-            resultsPopup.show(results, el);
-
-        } catch (error) {
-            console.error('Error analyzing text:', error);
-            resultsPopup.showError(`Failed to analyze text: ${error.message}`);
-        }
-
-
+        // Analyze first to get scores, then show improve popup with those scores
+        resultsPopup.analyzeAndShowImprovePopup(text, el);
     });
 
     // Add icon to the DOM

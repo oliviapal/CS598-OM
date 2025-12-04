@@ -8,6 +8,10 @@
     "storage",
     "activeTab"
   ],
+  "host_permissions": [
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
+  ],
   "optional_permissions": [
     "http://*/*",
     "https://*/*"
@@ -26,10 +30,12 @@
         "script.js",
         "data/mp-logo.png"
       ],
-      "matches": ["<all_urls>"]
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ],
   "icons": {
-    "128": "data/mp-logo.png" 
+    "128": "data/mp-logo.png"
   }
 }

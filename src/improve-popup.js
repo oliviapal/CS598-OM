@@ -17,28 +17,38 @@ export class ImprovePopup {
      * @param {Function} onCancel - callback()
      */
     show(suggestionData, onSubmit, onCancel) {
-        // suggestionData: { original_text, scores: { toxicity, empathy, thoughtfulness, proSocial } }
+        // suggestionData: { original_text, scores: { toxicity, empathy, thoughtfulness, proSocial } or null }
         const { original_text, scores } = suggestionData;
         console.log('Showing improve popup for text:', original_text, 'with scores:', scores);
         this.popup = document.createElement('div');
         this.popup.className = 'socially-popup socially-improve-popup';
+
+        // Build checklist with or without scores
+        const buildCheckboxItem = (value, label, score) => {
+            if (scores && score !== null && score !== undefined) {
+                return `<label><input type="checkbox" class="improve-checkbox" value="${value}"> ${label} <span class="score-badge ${getScoreColor(value, score)}">${this.escapeHtml(score)}</span></label><br>`;
+            } else {
+                return `<label><input type="checkbox" class="improve-checkbox" value="${value}"> ${label}</label><br>`;
+            }
+        };
+
         this.popup.innerHTML = `
             <div class="socially-popup-header">
-                <h3>Improve Suggestion</h3>
+                <h3>Customize Improvement</h3>
                 <button class="socially-close-improve-btn" title="Close">&times;</button>
             </div>
             <div class="socially-popup-body">
-                <p>Your Input:</p>
+                <p>Your text:</p>
                 <div class="improve-current-text">
                     ${this.escapeHtml(original_text)}
                 </div>
                 <div class="improve-input-section">
                     <label>Select categories to improve:</label>
                     <div class="improve-checklist">
-                        <label><input type="checkbox" class="improve-checkbox" value="toxicity"> Toxicity <span class="score-badge ${getScoreColor('toxicity', scores.toxicity)}">${this.escapeHtml(scores.toxicity)}</span></label><br>
-                        <label><input type="checkbox" class="improve-checkbox" value="empathy"> Empathy <span class="score-badge ${getScoreColor('empathy', scores.empathy)}">${this.escapeHtml(scores.empathy)}</span></label><br>
-                        <label><input type="checkbox" class="improve-checkbox" value="politeness"> Politeness <span class="score-badge ${getScoreColor('politeness', scores.politeness)}">${this.escapeHtml(scores.politeness)}</span></label><br>
-                        <label><input type="checkbox" class="improve-checkbox" value="proSocial"> Pro-Social <span class="score-badge ${getScoreColor('proSocial', scores.proSocial)}">${this.escapeHtml(scores.proSocial)}</span></label>
+                        ${buildCheckboxItem('toxicity', 'Toxicity', scores?.toxicity)}
+                        ${buildCheckboxItem('empathy', 'Empathy', scores?.empathy)}
+                        ${buildCheckboxItem('politeness', 'Politeness', scores?.politeness)}
+                        ${buildCheckboxItem('proSocial', 'Pro-Social', scores?.proSocial)}
                     </div>
                 </div>
                 <div class="improve-actions">
@@ -46,7 +56,7 @@ export class ImprovePopup {
                         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                        Generate Improvement
+                        Analyze & Improve
                     </button>
                     <button class="socially-improve-cancel-btn">Cancel</button>
                 </div>

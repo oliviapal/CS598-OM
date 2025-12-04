@@ -4,16 +4,44 @@ from pydantic import BaseModel
 from rephrase import get_rephrased_text, generate_prompt
 from fastapi.middleware.cors import CORSMiddleware
 from analyzer import analyze_text_simple, _toxicity_improve, _others_improve
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 app = FastAPI()
 
+# CORS settings: explicitly allow Outlook and Chrome extension contexts.
+allowed_origins = [
+    "https://outlook.office.com",
+    "https://outlook.office365.com",
+    "https://outlook.live.com",
+    "chrome-extension://*",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (for development)
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^chrome-extension://.*$",
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Private Network Access: add header for preflight and actual responses
+class PrivateNetworkAccessMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        # Handle preflight OPTIONS quickly
+        if request.method == "OPTIONS":
+            resp = Response(status_code=204)
+        else:
+            resp = await call_next(request)
+        # Chrome PNA: allow requests from public address space to loopback
+        resp.headers["Access-Control-Allow-Private-Network"] = "true"
+        # Common CORS headers to be explicit on preflight
+        resp.headers.setdefault("Access-Control-Allow-Methods", "GET,POST,OPTIONS")
+        resp.headers.setdefault("Access-Control-Allow-Headers", "*")
+        return resp
+
+app.add_middleware(PrivateNetworkAccessMiddleware)
 
 @app.get("/")
 async def read_root():

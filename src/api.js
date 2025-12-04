@@ -6,16 +6,32 @@ let BACKEND_URL = 'http://127.0.0.1:8000';
 
 async function request(path, options = {}) {
     const url = `${BACKEND_URL}${path}`;
-    const resp = await fetch(url, {
-        headers: { 'Content-Type': 'application/json' },
-        ...options,
+
+    // Route through background script to bypass Private Network Access restrictions
+    const proxyResponse = await chrome.runtime.sendMessage({
+        type: 'api-proxy',
+        url: url,
+        options: {
+            method: options.method || 'GET',
+            headers: options.headers || {},
+            body: options.body,
+        },
     });
+
+    if (!proxyResponse.success) {
+        throw new Error(`API proxy error: ${proxyResponse.error}`);
+    }
+
+    const resp = proxyResponse.response;
     if (!resp.ok) {
         let details = '';
-        try { details = JSON.stringify(await resp.json()); } catch { }
+        if (resp.json) {
+            try { details = JSON.stringify(resp.json); } catch { }
+        }
         throw new Error(`HTTP ${resp.status} ${resp.statusText}${details ? ': ' + details : ''}`);
     }
-    try { return await resp.json(); } catch { return null; }
+
+    return resp.json || null;
 }
 
 /**
