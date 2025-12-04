@@ -46,7 +46,8 @@ export class ResultsPopup {
         // Create popup container
         this.popup = document.createElement('div');
         this.popup.className = 'socially-popup';
-
+        // print results for debugging
+        console.log('Showing results popup with data:', results);
         // Build popup content
         this.popup.innerHTML = `
             <div class="socially-popup-header">
@@ -56,8 +57,7 @@ export class ResultsPopup {
             <div class="socially-popup-body">
                 <!-- Scores Section -->
                 <div class="socially-scores">
-                    <h4>Scores</h4>
-                    <p class="score-legend">Original Score → Improved Score</p>
+                    <h4>Scores <span class="score-legend">(Original Score → Improved Score)</span></h4>
                     <div class="score-item">
                         <span class="score-label">Toxicity:</span>
                         <span class="score-comparison">
@@ -95,7 +95,7 @@ export class ResultsPopup {
                 <div class="socially-suggestion">
                     <h4>Suggested Rephrase</h4>
                     <div class="suggestion-text">
-                        ${this.escapeHtml(results.suggestion)}
+                        ${this.escapeHtml(results.rephrased_text)}
                     </div>
                     <div class="socially-action-buttons">
                         <button class="socially-accept-btn" title="Accept suggestion">
@@ -265,14 +265,14 @@ export class ResultsPopup {
      */
     async showResultsWithImprovement(text, selectedCategories, targetElement) {
         // We already have the analysis results from initial analysis
-        const results = this.initialResults;
+        const improved = await improveSuggestion(text, selectedCategories);
 
         // Store original text and selected categories
-        try { results.original_text = text; } catch (_) { }
-        try { results.selectedCategories = selectedCategories; } catch (_) { }
+        try { improved.original_text = text; } catch (_) { }
+        try { improved.selectedCategories = selectedCategories; } catch (_) { }
 
         // Show results popup with reference to the element
-        this.show(results, targetElement);
+        this.show(improved, targetElement);
     }
 
     /**
@@ -285,7 +285,7 @@ export class ResultsPopup {
     /**
      * Submit improvement request
      */
-    async submitImprovement(currentSuggestion, selectedCategories, scores) {
+    async submitImprovement(currentSuggestion, selectedCategories) {
         try {
             this.hideImprovePopup();
             // Call API without showing loading screen

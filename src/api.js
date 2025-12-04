@@ -91,7 +91,7 @@ export async function improveSuggestion(original_text, selectedCategories = []) 
         method: 'POST',
         body: JSON.stringify(payload),
     });
-    return data?.rephrased_text || data?.received_text || suggestion;
+    return data;
 }
 
 /**

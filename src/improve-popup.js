@@ -34,7 +34,7 @@ export class ImprovePopup {
 
         this.popup.innerHTML = `
             <div class="socially-popup-header">
-                <h3>Customize Improvement</h3>
+                <h3>Analysis & Improvement</h3>
                 <button class="socially-close-improve-btn" title="Close">&times;</button>
             </div>
             <div class="socially-popup-body">
@@ -43,7 +43,7 @@ export class ImprovePopup {
                     ${this.escapeHtml(original_text)}
                 </div>
                 <div class="improve-input-section">
-                    <label>Select categories to improve:</label>
+                    <label>Select categories to improve, or leave it blank for general improvement:\n</label>
                     <div class="improve-checklist">
                         ${buildCheckboxItem('toxicity', 'Toxicity', scores?.toxicity)}
                         ${buildCheckboxItem('empathy', 'Empathy', scores?.empathy)}
@@ -56,7 +56,7 @@ export class ImprovePopup {
                         <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="20 6 9 17 4 12"></polyline>
                         </svg>
-                        Analyze & Improve
+                        Improve
                     </button>
                     <button class="socially-improve-cancel-btn">Cancel</button>
                 </div>
