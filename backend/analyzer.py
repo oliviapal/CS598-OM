@@ -199,7 +199,7 @@ def empathy_label(score: float) -> str:
     """Convert empathy score to label"""
     if score < 0.05:
         return "low"
-    elif score < 0.1:
+    elif score < 0.115:
         return "medium"
     else:
         return "high"
@@ -276,7 +276,7 @@ def judge_text(metrics: Dict[str, Any],
                tox_hi: float = 0.7, 
                tox_med: float = 0.4,
                tox_lo: float = 0.2,
-               empathy_hi: float = 0.1,
+               empathy_hi: float = 0.115,
                empathy_lo: float = 0.05,
                politeness_hi: float = 0.7,
                politeness_lo: float = 0.4,
